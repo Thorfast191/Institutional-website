@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - No REST/tRPC API layer — the only Route Handler is `/api/auth/[...nextauth]`; everything else is Server Components + Server Actions. (design spec, Tech Stack)
-- All Prisma relations use the default `Restrict`-on-delete — no cascading deletes anywhere in the schema. (design spec, Key Decisions)
+- All Prisma relations use `Restrict`-on-delete — no cascading deletes anywhere in the schema. Note: Prisma's *implicit* default is `Restrict` only for mandatory relations; optional relations default to `SetNull`, so the schema's one optional relation (`Enrollment.droppedByUser`) needs `onDelete: Restrict` set explicitly (see Task 2's schema). (design spec, Key Decisions — corrected during Task 2 implementation after review caught the implicit-default gap)
 - `User` accounts are removed via `isActive = false`; never a hard delete — `gradedBy`/`recordedBy`/`droppedBy` must always stay resolvable. (design spec, Key Decisions)
 - Exactly one `Term.isActive = true` at a time, enforced at the application layer, not a DB constraint. (design spec, Key Decisions)
 - Admin's UI is scoped to `/admin` only in v1 — no merged cross-role views. (design spec, Key Decisions)
@@ -409,7 +409,7 @@ model Enrollment {
   enrolledAt    DateTime         @default(now())
   droppedAt     DateTime?
   droppedBy     String?
-  droppedByUser User?            @relation(fields: [droppedBy], references: [id])
+  droppedByUser User?            @relation(fields: [droppedBy], references: [id], onDelete: Restrict)
 
   grade Grade?
 

@@ -71,10 +71,15 @@ conversation:
   `sequence` field lets `QUIZ` (and any other repeatable type) have multiple
   instances (Quiz 1, Quiz 2, ...) per Subject per Term, while `MIDTERM`/
   `FINAL` simply stay at the default `sequence = 1`.
-- All relations are Prisma's implicit default (`Restrict`) — no cascading
-  deletes anywhere in this schema. `User` removal is handled by setting
-  `isActive = false`, never a hard delete, so grade/payment/audit history
-  (`gradedBy`, `recordedBy`, `droppedBy`) always stays resolvable.
+- All relations use `Restrict`-on-delete — no cascading deletes anywhere in
+  this schema. `User` removal is handled by setting `isActive = false`, never
+  a hard delete, so grade/payment/audit history (`gradedBy`, `recordedBy`,
+  `droppedBy`) always stays resolvable. Correction found during Task 2
+  implementation: Prisma's *implicit* default is `Restrict` only for
+  mandatory relations — optional relations default to `SetNull`. This
+  schema's one optional relation, `Enrollment.droppedByUser`, needs
+  `onDelete: Restrict` set explicitly (see below) or the audit trail would
+  silently null out on User deletion instead of blocking it.
 
 ## Data Model
 
@@ -294,7 +299,7 @@ model Enrollment {
   enrolledAt DateTime         @default(now())
   droppedAt  DateTime?
   droppedBy  String?
-  droppedByUser User?         @relation(fields: [droppedBy], references: [id])
+  droppedByUser User?         @relation(fields: [droppedBy], references: [id], onDelete: Restrict)
 
   grade Grade?
 
