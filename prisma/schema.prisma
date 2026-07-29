@@ -193,7 +193,7 @@ model Enrollment {
   enrolledAt    DateTime         @default(now())
   droppedAt     DateTime?
   droppedBy     String?
-  droppedByUser User?            @relation(fields: [droppedBy], references: [id])
+  droppedByUser User?            @relation(fields: [droppedBy], references: [id], onDelete: Restrict)
 
   grade Grade?
 
