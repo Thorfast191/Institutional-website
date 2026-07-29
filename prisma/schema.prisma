@@ -1,0 +1,247 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  TEACHER
+  STUDENT
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  DROPPED
+  COMPLETED
+}
+
+enum FeeType {
+  TUITION
+  LAB
+  LIBRARY
+  EXAM
+  OTHER
+}
+
+enum FeeStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+enum PaymentMethod {
+  CASH
+  BANK
+  ONLINE
+  OTHER
+}
+
+enum ExamType {
+  MIDTERM
+  FINAL
+  QUIZ
+  OTHER
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  studentProfile StudentProfile?
+  teacherProfile TeacherProfile?
+
+  grades   Grade[]
+  payments Payment[]
+  drops    Enrollment[]
+}
+
+model Department {
+  id              String           @id @default(cuid())
+  name            String
+  code            String           @unique
+  programs        Program[]
+  teacherProfiles TeacherProfile[]
+}
+
+model Program {
+  id              String           @id @default(cuid())
+  name            String
+  code            String           @unique
+  departmentId    String
+  department      Department       @relation(fields: [departmentId], references: [id])
+  subjects        Subject[]
+  studentProfiles StudentProfile[]
+}
+
+model Term {
+  id                   String   @id @default(cuid())
+  name                 String
+  startDate            DateTime
+  endDate              DateTime
+  isActive             Boolean  @default(false)
+  registrationOpensAt  DateTime
+  registrationClosesAt DateTime
+
+  sections Section[]
+  exams    Exam[]
+  feeItems FeeItem[]
+}
+
+model Subject {
+  id        String    @id @default(cuid())
+  name      String
+  code      String    @unique
+  credits   Int
+  programId String
+  program   Program   @relation(fields: [programId], references: [id])
+  sections  Section[]
+  exams     Exam[]
+}
+
+model TeacherProfile {
+  id           String     @id @default(cuid())
+  userId       String     @unique
+  user         User       @relation(fields: [userId], references: [id])
+  employeeId   String     @unique
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  designation  String
+  sections     Section[]
+}
+
+model StudentProfile {
+  id          String       @id @default(cuid())
+  userId      String       @unique
+  user        User         @relation(fields: [userId], references: [id])
+  studentId   String       @unique
+  programId   String
+  program     Program      @relation(fields: [programId], references: [id])
+  enrollments Enrollment[]
+  feeItems    FeeItem[]
+}
+
+model Section {
+  id        String         @id @default(cuid())
+  subjectId String
+  subject   Subject        @relation(fields: [subjectId], references: [id])
+  termId    String
+  term      Term           @relation(fields: [termId], references: [id])
+  teacherId String
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [id])
+  label     String
+
+  routines    Routine[]
+  enrollments Enrollment[]
+
+  @@unique([subjectId, termId, label])
+}
+
+model Routine {
+  id        String    @id @default(cuid())
+  sectionId String
+  section   Section   @relation(fields: [sectionId], references: [id])
+  dayOfWeek DayOfWeek
+  startTime DateTime  @db.Time
+  endTime   DateTime  @db.Time
+  room      String
+}
+
+model Exam {
+  id        String   @id @default(cuid())
+  subjectId String
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  termId    String
+  term      Term     @relation(fields: [termId], references: [id])
+  examType  ExamType
+  sequence  Int      @default(1)
+  date      DateTime @db.Date
+  startTime DateTime @db.Time
+  endTime   DateTime @db.Time
+  room      String
+
+  @@unique([subjectId, termId, examType, sequence])
+}
+
+model Enrollment {
+  id            String           @id @default(cuid())
+  studentId     String
+  student       StudentProfile   @relation(fields: [studentId], references: [id])
+  sectionId     String
+  section       Section          @relation(fields: [sectionId], references: [id])
+  status        EnrollmentStatus @default(ENROLLED)
+  enrolledAt    DateTime         @default(now())
+  droppedAt     DateTime?
+  droppedBy     String?
+  droppedByUser User?            @relation(fields: [droppedBy], references: [id])
+
+  grade Grade?
+
+  @@unique([studentId, sectionId])
+}
+
+model Grade {
+  id           String     @id @default(cuid())
+  enrollmentId String     @unique
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  marks        Decimal // Prisma Decimal — .toString()/.toNumber() before passing to a Client Component
+  letterGrade  String
+  gradePoint   Decimal // Prisma Decimal — .toString()/.toNumber() before passing to a Client Component
+  gradedAt     DateTime   @default(now())
+  gradedBy     String
+  gradedByUser User       @relation(fields: [gradedBy], references: [id])
+}
+
+model GradeScale {
+  id          String  @id @default(cuid())
+  minMarks    Decimal
+  maxMarks    Decimal
+  letterGrade String
+  gradePoint  Decimal
+}
+
+model FeeItem {
+  id        String         @id @default(cuid())
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [id])
+  termId    String
+  term      Term           @relation(fields: [termId], references: [id])
+  feeType   FeeType
+  amount    Decimal // Prisma Decimal — .toString()/.toNumber() before passing to a Client Component
+  dueDate   DateTime
+  status    FeeStatus      @default(UNPAID)
+
+  payments Payment[]
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  feeItemId      String
+  feeItem        FeeItem       @relation(fields: [feeItemId], references: [id])
+  amount         Decimal // Prisma Decimal — .toString()/.toNumber() before passing to a Client Component
+  paidAt         DateTime      @default(now())
+  method         PaymentMethod
+  reference      String?
+  recordedBy     String
+  recordedByUser User          @relation(fields: [recordedBy], references: [id])
+}
