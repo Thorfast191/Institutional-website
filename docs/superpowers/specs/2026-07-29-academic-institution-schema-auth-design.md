@@ -67,6 +67,14 @@ conversation:
 - A Section's meeting times/rooms live entirely on `Routine` (one row per
   weekly slot); `Section` itself has no `room` field, since a Section can meet
   in different rooms across the week (e.g. lecture vs. lab).
+- An Exam is uniquely identified by (Subject, Term, examType, sequence) — the
+  `sequence` field lets `QUIZ` (and any other repeatable type) have multiple
+  instances (Quiz 1, Quiz 2, ...) per Subject per Term, while `MIDTERM`/
+  `FINAL` simply stay at the default `sequence = 1`.
+- All relations are Prisma's implicit default (`Restrict`) — no cascading
+  deletes anywhere in this schema. `User` removal is handled by setting
+  `isActive = false`, never a hard delete, so grade/payment/audit history
+  (`gradedBy`, `recordedBy`, `droppedBy`) always stays resolvable.
 
 ## Data Model
 
@@ -81,7 +89,7 @@ conversation:
 | **Subject** | id, name, code, credits, programId | e.g. "CSE101"; Manager-owned |
 | **Section** | id, subjectId, termId, teacherId, label ("A"/"B") | One Subject can have several Sections per Term |
 | **Routine** | id, sectionId, dayOfWeek, startTime, endTime, room | Weekly recurring slot(s) per Section; room lives here, not on Section |
-| **Exam** | id, subjectId, termId, examType, date, startTime, endTime, room | Shared across all sections of a Subject |
+| **Exam** | id, subjectId, termId, examType, sequence, date, startTime, endTime, room | Shared across all sections of a Subject; sequence allows multiple instances of a type (e.g. Quiz 1, Quiz 2) |
 | **Enrollment** | id, studentId, sectionId, status (`ENROLLED\|DROPPED\|COMPLETED`), enrolledAt, droppedAt, droppedBy | Unique (studentId, sectionId); created by student self-registration; droppedBy/droppedAt audit a Manager force-drop |
 | **Grade** | id, enrollmentId (1:1), marks, letterGrade, gradePoint, gradedAt, gradedBy | Letter/GPA auto-derived from GradeScale on save |
 | **GradeScale** | id, minMarks, maxMarks, letterGrade, gradePoint | Admin-configurable, school-wide |
@@ -267,12 +275,13 @@ model Exam {
   termId    String
   term      Term     @relation(fields: [termId], references: [id])
   examType  ExamType
+  sequence  Int      @default(1)
   date      DateTime @db.Date
   startTime DateTime @db.Time
   endTime   DateTime @db.Time
   room      String
 
-  @@unique([subjectId, termId, examType])
+  @@unique([subjectId, termId, examType, sequence])
 }
 
 model Enrollment {
@@ -401,7 +410,8 @@ features are built in later phases/specs.
 - 2 Departments, 3 Programs, 2 Terms (1 past/`isActive:false`, 1 current/
   `isActive:true` with an open registration window).
 - 6–8 Subjects, 8–10 Sections across them (varying teachers/labels).
-- Routines for each Section; 2–3 Exams.
+- Routines for each Section; 2–3 Exams, including at least one Subject with
+  two `QUIZ` rows (sequence 1 and 2) to exercise the multi-instance case.
 - `GradeScale` rows covering a standard 4.0 scale (A+ down to F).
 - A mix of Enrollments: several `ENROLLED` (current term, self-registered),
   some `COMPLETED` with Grades (past term), one `DROPPED` with
