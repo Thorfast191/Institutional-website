@@ -17,6 +17,7 @@
 - Admin's UI is scoped to `/admin` only in v1 — no merged cross-role views. (design spec, Key Decisions)
 - "System settings" (Admin-exclusive) = User accounts, GradeScale config, Department/Program structure. Subjects/Sections/Routines/Exams/Fees are Manager-owned operationally. (design spec, Key Decisions)
 - No public self-registration for accounts (Admin-provisioned only); no seat-limit or prerequisite checks on student course self-registration in v1. (design spec, Key Decisions)
+- **Forward-looking, not needed yet:** `FeeItem.amount`, `Payment.amount`, and `Grade.marks`/`gradePoint` are Prisma `Decimal` fields (see inline comments in Task 2's schema). Prisma's `Decimal` type isn't directly serializable to a Client Component — later phases that render these values must call `.toString()`/`.toNumber()` first. Not applicable in Phase 1 since its dashboard pages are static placeholders that never touch these fields.
 - A generic `requireRole()` Server Action guard is **deferred** to whichever future phase introduces the first role-gated mutation (e.g., student course registration). Phase 1's only mutations are login/logout, which don't need a role check — building it now would have no caller. `lib/permissions.ts` in this phase only covers path-based checks for middleware.
 
 ## Prerequisites (manual, before Task 1)
@@ -419,9 +420,9 @@ model Grade {
   id           String     @id @default(cuid())
   enrollmentId String     @unique
   enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
-  marks        Decimal
+  marks        Decimal // Prisma Decimal — .toString()/.toNumber() before passing to a Client Component
   letterGrade  String
-  gradePoint   Decimal
+  gradePoint   Decimal // Prisma Decimal — .toString()/.toNumber() before passing to a Client Component
   gradedAt     DateTime   @default(now())
   gradedBy     String
   gradedByUser User       @relation(fields: [gradedBy], references: [id])
@@ -442,7 +443,7 @@ model FeeItem {
   termId    String
   term      Term           @relation(fields: [termId], references: [id])
   feeType   FeeType
-  amount    Decimal
+  amount    Decimal // Prisma Decimal — .toString()/.toNumber() before passing to a Client Component
   dueDate   DateTime
   status    FeeStatus      @default(UNPAID)
 
@@ -453,7 +454,7 @@ model Payment {
   id             String        @id @default(cuid())
   feeItemId      String
   feeItem        FeeItem       @relation(fields: [feeItemId], references: [id])
-  amount         Decimal
+  amount         Decimal // Prisma Decimal — .toString()/.toNumber() before passing to a Client Component
   paidAt         DateTime      @default(now())
   method         PaymentMethod
   reference      String?
@@ -637,6 +638,10 @@ describe("isPathAllowedForRole", () => {
     expect(isPathAllowedForRole("/admin/users", "STUDENT")).toBe(false);
     expect(isPathAllowedForRole("/manager/fees", "TEACHER")).toBe(false);
   });
+
+  it("does not treat a sibling path with the same string prefix as a match", () => {
+    expect(isPathAllowedForRole("/administration", "ADMIN")).toBe(false);
+  });
 });
 ```
 
@@ -662,14 +667,15 @@ export function dashboardPathForRole(role: Role): string {
 }
 
 export function isPathAllowedForRole(pathname: string, role: Role): boolean {
-  return pathname.startsWith(dashboardPathForRole(role));
+  const base = dashboardPathForRole(role);
+  return pathname === base || pathname.startsWith(base + "/");
 }
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run lib/permissions.test.ts`
-Expected: PASS (3 tests)
+Expected: PASS (4 tests)
 
 - [ ] **Step 5: Commit**
 
