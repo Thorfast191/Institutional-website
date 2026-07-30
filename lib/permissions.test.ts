@@ -25,3 +25,37 @@ describe("isPathAllowedForRole", () => {
     expect(isPathAllowedForRole("/administration", "ADMIN")).toBe(false);
   });
 });
+
+import { requireRole } from "@/lib/permissions";
+import { vi } from "vitest";
+
+vi.mock("@/auth", () => ({
+  auth: vi.fn(),
+}));
+
+import { auth } from "@/auth";
+
+describe("requireRole", () => {
+  it("returns the session when the role is allowed", async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: "u1", role: "ADMIN" },
+      expires: "",
+    } as never);
+
+    const session = await requireRole(["ADMIN"]);
+    expect(session.user.role).toBe("ADMIN");
+  });
+
+  it("throws when the session has no user", async () => {
+    vi.mocked(auth).mockResolvedValue(null as never);
+    await expect(requireRole(["ADMIN"])).rejects.toThrow("Unauthorized");
+  });
+
+  it("throws when the role is not in the allowed list", async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: "u1", role: "STUDENT" },
+      expires: "",
+    } as never);
+    await expect(requireRole(["ADMIN", "MANAGER"])).rejects.toThrow("Unauthorized");
+  });
+});
