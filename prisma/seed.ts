@@ -67,18 +67,21 @@ async function main() {
     },
   });
 
+  // Decimal columns take strings, not JS numbers: 89.99 as a double is
+  // 89.98999999999999..., which Postgres stores verbatim and which would leave
+  // a gap between adjacent bands when grades are looked up by marks.
   await prisma.gradeScale.createMany({
     data: [
-      { minMarks: 90, maxMarks: 100, letterGrade: "A+", gradePoint: 4.0 },
-      { minMarks: 85, maxMarks: 89.99, letterGrade: "A", gradePoint: 3.75 },
-      { minMarks: 80, maxMarks: 84.99, letterGrade: "A-", gradePoint: 3.5 },
-      { minMarks: 75, maxMarks: 79.99, letterGrade: "B+", gradePoint: 3.25 },
-      { minMarks: 70, maxMarks: 74.99, letterGrade: "B", gradePoint: 3.0 },
-      { minMarks: 65, maxMarks: 69.99, letterGrade: "B-", gradePoint: 2.75 },
-      { minMarks: 60, maxMarks: 64.99, letterGrade: "C+", gradePoint: 2.5 },
-      { minMarks: 50, maxMarks: 59.99, letterGrade: "C", gradePoint: 2.0 },
-      { minMarks: 40, maxMarks: 49.99, letterGrade: "D", gradePoint: 1.0 },
-      { minMarks: 0, maxMarks: 39.99, letterGrade: "F", gradePoint: 0.0 },
+      { minMarks: "90", maxMarks: "100", letterGrade: "A+", gradePoint: "4.00" },
+      { minMarks: "85", maxMarks: "89.99", letterGrade: "A", gradePoint: "3.75" },
+      { minMarks: "80", maxMarks: "84.99", letterGrade: "A-", gradePoint: "3.50" },
+      { minMarks: "75", maxMarks: "79.99", letterGrade: "B+", gradePoint: "3.25" },
+      { minMarks: "70", maxMarks: "74.99", letterGrade: "B", gradePoint: "3.00" },
+      { minMarks: "65", maxMarks: "69.99", letterGrade: "B-", gradePoint: "2.75" },
+      { minMarks: "60", maxMarks: "64.99", letterGrade: "C+", gradePoint: "2.50" },
+      { minMarks: "50", maxMarks: "59.99", letterGrade: "C", gradePoint: "2.00" },
+      { minMarks: "40", maxMarks: "49.99", letterGrade: "D", gradePoint: "1.00" },
+      { minMarks: "0", maxMarks: "39.99", letterGrade: "F", gradePoint: "0.00" },
     ],
   });
 
