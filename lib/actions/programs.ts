@@ -1,21 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/permissions";
 import { programSchema } from "@/lib/validation/program";
-
-function isUniqueConstraintError(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
-}
-
-function isRestrictConstraintError(error: unknown): boolean {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    (error.code === "P2003" || error.code === "P2014")
-  );
-}
+import { isUniqueConstraintError, isRestrictConstraintError } from "@/lib/prisma-errors";
 
 export async function createProgram(formData: FormData) {
   await requireRole(["ADMIN"]);

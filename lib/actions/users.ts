@@ -1,15 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/permissions";
 import { createUserSchema, editUserSchema, resetPasswordSchema } from "@/lib/validation/user";
 import { hashPassword } from "@/lib/password";
-
-function isUniqueConstraintError(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
-}
+import { isUniqueConstraintError } from "@/lib/prisma-errors";
 
 const DUPLICATE_MESSAGE = "Email, employee ID, or student ID already in use.";
 
