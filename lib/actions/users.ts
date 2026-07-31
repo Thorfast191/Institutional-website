@@ -70,8 +70,18 @@ export async function createUser(formData: FormData) {
 export async function updateUser(id: string, formData: FormData) {
   await requireRole(["ADMIN"]);
 
+  // Role is immutable after creation, so take it from the stored record rather
+  // than the submitted form. The edit form carries role in a hidden field, and a
+  // tampered or stale one would otherwise pick which profile table gets written:
+  // a mismatched role silently skips the profile update, or fails on a profile
+  // row that does not exist.
+  const existing = await prisma.user.findUnique({ where: { id }, select: { role: true } });
+  if (!existing) {
+    redirect(`/admin/users?error=${encodeURIComponent("That user no longer exists.")}`);
+  }
+
   const raw = {
-    role: formData.get("role"),
+    role: existing.role,
     name: formData.get("name"),
     email: formData.get("email"),
     employeeId: formData.get("employeeId") || undefined,
