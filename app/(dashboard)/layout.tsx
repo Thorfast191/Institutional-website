@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 
@@ -7,6 +8,14 @@ const ROLE_LABEL: Record<string, string> = {
   TEACHER: "Teacher",
   STUDENT: "Student",
 };
+
+const ADMIN_NAV = [
+  { href: "/admin", label: "Overview" },
+  { href: "/admin/users", label: "Users" },
+  { href: "/admin/departments", label: "Departments" },
+  { href: "/admin/programs", label: "Programs" },
+  { href: "/admin/grade-scale", label: "Grade Scale" },
+];
 
 export default async function DashboardLayout({
   children,
@@ -23,6 +32,8 @@ export default async function DashboardLayout({
     "use server";
     await signOut({ redirectTo: "/login" });
   }
+
+  const nav = session.user.role === "ADMIN" ? ADMIN_NAV : [];
 
   return (
     <div className="min-h-screen">
@@ -42,6 +53,15 @@ export default async function DashboardLayout({
           </button>
         </form>
       </header>
+      {nav.length > 0 && (
+        <nav className="flex gap-4 border-b border-slate-200 bg-white px-6 py-2 text-sm">
+          {nav.map((item) => (
+            <Link key={item.href} href={item.href} className="text-slate-600 hover:text-slate-900">
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      )}
       <main className="p-6">{children}</main>
     </div>
   );
