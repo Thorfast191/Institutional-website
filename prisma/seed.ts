@@ -236,28 +236,32 @@ async function main() {
     ],
   });
 
+  // Decimal amounts are strings, never JS numbers. A number round-trips through
+  // a double and silently rewrites values like 89.99 — the corruption this
+  // project hit on GradeScale in Phase 2. These happen to be whole numbers, but
+  // the rule holds everywhere so editing one to have cents stays safe.
   const [tanvirTuition, tanvirLab, sadiaTuition] = await Promise.all([
-    prisma.feeItem.create({ data: { studentId: tanvir.id, termId: currentTerm.id, feeType: FeeType.TUITION, amount: 45000, dueDate: new Date("2026-07-10") } }),
-    prisma.feeItem.create({ data: { studentId: tanvir.id, termId: currentTerm.id, feeType: FeeType.LAB, amount: 3000, dueDate: new Date("2026-07-10") } }),
-    prisma.feeItem.create({ data: { studentId: sadia.id, termId: currentTerm.id, feeType: FeeType.TUITION, amount: 45000, dueDate: new Date("2026-07-10") } }),
+    prisma.feeItem.create({ data: { studentId: tanvir.id, termId: currentTerm.id, feeType: FeeType.TUITION, amount: "45000", dueDate: new Date("2026-07-10") } }),
+    prisma.feeItem.create({ data: { studentId: tanvir.id, termId: currentTerm.id, feeType: FeeType.LAB, amount: "3000", dueDate: new Date("2026-07-10") } }),
+    prisma.feeItem.create({ data: { studentId: sadia.id, termId: currentTerm.id, feeType: FeeType.TUITION, amount: "45000", dueDate: new Date("2026-07-10") } }),
   ]);
-  await prisma.feeItem.create({ data: { studentId: rakib.id, termId: currentTerm.id, feeType: FeeType.TUITION, amount: 45000, dueDate: new Date("2026-07-10") } });
-  const nabilaLibrary = await prisma.feeItem.create({ data: { studentId: nabila.id, termId: currentTerm.id, feeType: FeeType.LIBRARY, amount: 1500, dueDate: new Date("2026-07-15") } });
+  await prisma.feeItem.create({ data: { studentId: rakib.id, termId: currentTerm.id, feeType: FeeType.TUITION, amount: "45000", dueDate: new Date("2026-07-10") } });
+  const nabilaLibrary = await prisma.feeItem.create({ data: { studentId: nabila.id, termId: currentTerm.id, feeType: FeeType.LIBRARY, amount: "1500", dueDate: new Date("2026-07-15") } });
 
   await prisma.payment.create({
-    data: { feeItemId: tanvirTuition.id, amount: 45000, method: PaymentMethod.BANK, reference: "TXN-0001", recordedBy: manager.id },
+    data: { feeItemId: tanvirTuition.id, amount: "45000", method: PaymentMethod.BANK, reference: "TXN-0001", recordedBy: manager.id },
   });
   await prisma.feeItem.update({ where: { id: tanvirTuition.id }, data: { status: FeeStatus.PAID } });
   // tanvirLab is left UNPAID (no payment recorded).
   void tanvirLab;
 
   await prisma.payment.create({
-    data: { feeItemId: sadiaTuition.id, amount: 20000, method: PaymentMethod.CASH, recordedBy: manager.id },
+    data: { feeItemId: sadiaTuition.id, amount: "20000", method: PaymentMethod.CASH, recordedBy: manager.id },
   });
   await prisma.feeItem.update({ where: { id: sadiaTuition.id }, data: { status: FeeStatus.PARTIAL } });
 
   await prisma.payment.create({
-    data: { feeItemId: nabilaLibrary.id, amount: 1500, method: PaymentMethod.ONLINE, reference: "TXN-0002", recordedBy: manager.id },
+    data: { feeItemId: nabilaLibrary.id, amount: "1500", method: PaymentMethod.ONLINE, reference: "TXN-0002", recordedBy: manager.id },
   });
   await prisma.feeItem.update({ where: { id: nabilaLibrary.id }, data: { status: FeeStatus.PAID } });
 
