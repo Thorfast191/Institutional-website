@@ -14,3 +14,15 @@ export const positiveInt = (label: string) =>
     .number()
     .int(`${label} must be a whole number`)
     .min(1, `${label} must be at least 1`);
+
+// Money stays a string end to end. Routing an amount through
+// z.coerce.number() sends it through a JS double, which silently rewrites
+// "89.99" as 89.98999999999999 — a real corruption bug this project already
+// hit once on GradeScale in Phase 2. Prisma accepts a string for a Decimal
+// column directly, so validate the shape and pass it through untouched.
+export const decimalString = (label: string) =>
+  z
+    .string()
+    .trim()
+    .regex(/^\d+(\.\d+)?$/, `${label} must be a non-negative number`)
+    .refine((v) => Number(v) > 0, `${label} must be greater than zero`);
