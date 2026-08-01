@@ -54,6 +54,12 @@ export default async function SectionDetailPage({
         <p className="mt-1 text-sm text-slate-600">
           {section.subject.name} · {section.term.name} · {section.teacher.user.name}
         </p>
+        <Link
+          href={`/manager/sections/${section.id}/enrollments`}
+          className="mt-2 inline-block text-sm text-slate-600 underline"
+        >
+          View roster
+        </Link>
       </div>
 
       {error && (
