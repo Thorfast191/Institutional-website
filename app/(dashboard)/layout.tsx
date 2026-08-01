@@ -17,6 +17,20 @@ const ADMIN_NAV = [
   { href: "/admin/grade-scale", label: "Grade Scale" },
 ];
 
+const MANAGER_NAV = [
+  { href: "/manager", label: "Overview" },
+  { href: "/manager/terms", label: "Terms" },
+  { href: "/manager/subjects", label: "Subjects" },
+  { href: "/manager/sections", label: "Sections" },
+  { href: "/manager/exams", label: "Exams" },
+];
+
+// Teacher and Student stay absent until their own phases build those screens.
+const NAV_BY_ROLE: Record<string, { href: string; label: string }[]> = {
+  ADMIN: ADMIN_NAV,
+  MANAGER: MANAGER_NAV,
+};
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -33,7 +47,7 @@ export default async function DashboardLayout({
     await signOut({ redirectTo: "/login" });
   }
 
-  const nav = session.user.role === "ADMIN" ? ADMIN_NAV : [];
+  const nav = NAV_BY_ROLE[session.user.role] ?? [];
 
   return (
     <div className="min-h-screen">
