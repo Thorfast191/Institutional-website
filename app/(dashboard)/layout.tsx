@@ -23,6 +23,7 @@ const MANAGER_NAV = [
   { href: "/manager/subjects", label: "Subjects" },
   { href: "/manager/sections", label: "Sections" },
   { href: "/manager/exams", label: "Exams" },
+  { href: "/manager/fees", label: "Fees" },
 ];
 
 // Teacher and Student stay absent until their own phases build those screens.

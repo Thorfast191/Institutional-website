@@ -2,19 +2,22 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
 export default async function ManagerDashboardPage() {
-  const [termCount, subjectCount, sectionCount, examCount, activeTerm] = await Promise.all([
-    prisma.term.count(),
-    prisma.subject.count(),
-    prisma.section.count(),
-    prisma.exam.count(),
-    prisma.term.findFirst({ where: { isActive: true } }),
-  ]);
+  const [termCount, subjectCount, sectionCount, examCount, unpaidCount, activeTerm] =
+    await Promise.all([
+      prisma.term.count(),
+      prisma.subject.count(),
+      prisma.section.count(),
+      prisma.exam.count(),
+      prisma.feeItem.count({ where: { status: { not: "PAID" } } }),
+      prisma.term.findFirst({ where: { isActive: true } }),
+    ]);
 
   const cards = [
     { label: "Terms", count: termCount, href: "/manager/terms" },
     { label: "Subjects", count: subjectCount, href: "/manager/subjects" },
     { label: "Sections", count: sectionCount, href: "/manager/sections" },
     { label: "Exams", count: examCount, href: "/manager/exams" },
+    { label: "Unpaid Fees", count: unpaidCount, href: "/manager/fees" },
   ];
 
   return (
@@ -30,7 +33,7 @@ export default async function ManagerDashboardPage() {
         )}
       </p>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         {cards.map((c) => (
           <Link
             key={c.href}
