@@ -28,11 +28,20 @@ const MANAGER_NAV = [
 
 const TEACHER_NAV = [{ href: "/teacher", label: "My Sections" }];
 
-// Student stays absent until Phase 5 builds those screens.
+const STUDENT_NAV = [
+  { href: "/student", label: "Dashboard" },
+  { href: "/student/register", label: "Register" },
+  { href: "/student/courses", label: "My Courses" },
+  { href: "/student/routine", label: "Routine" },
+  { href: "/student/exams", label: "Exams" },
+  { href: "/student/dues", label: "Dues" },
+];
+
 const NAV_BY_ROLE: Record<string, { href: string; label: string }[]> = {
   ADMIN: ADMIN_NAV,
   MANAGER: MANAGER_NAV,
   TEACHER: TEACHER_NAV,
+  STUDENT: STUDENT_NAV,
 };
 
 export default async function DashboardLayout({
